@@ -7,6 +7,10 @@
 #include<sstream>
 #include<vector>
 #include<math.h>
+#include<windows.h> 
+#define ASSERT(x) if (!(x)) __debugbreak();
+
+const unsigned int VERTEX_COUNT = 120;
 
 struct ShaderProgramSource
 {
@@ -97,7 +101,7 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 static std::vector<float> GetPositions(float radius, unsigned int vertex_count)
 {
-    float theta = ((360 / vertex_count)*3.142)/180;
+    float theta = ((360.0 / (float)vertex_count)*3.142)/180.0;
     std::vector<float> positions = { 0.0f, 0.0f, radius, 0.0f };
 
     for (unsigned int i = 1; i <= vertex_count; i++)
@@ -149,28 +153,38 @@ int main(void)
         std::cout << "Error encountered" << std::endl;
     }
 
-    std::vector<float> positions = GetPositions(0.3f, 50);
+    std::vector<float> positions = GetPositions(0.5f, VERTEX_COUNT);
 
-    std::vector<unsigned int> indices = GetIndices(50);
+    std::vector<unsigned int> indices = GetIndices(VERTEX_COUNT);
 
+    unsigned int vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, positions.capacity() * sizeof(float), &positions[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), &positions[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    glVertexAttribPointer(vao, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 
     unsigned int ibo;
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.capacity() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     ShaderProgramSource source = ParseShader("res/Shaders/Basic.shader");
 
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-    glUseProgram(shader);
+    
+
+    int location = glGetUniformLocation(shader, "u_Color");
+
+    ASSERT(location != -1);
+
+    float r = 0.0f;
+    float increment = 0.0f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -178,7 +192,22 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUseProgram(shader);
+        glUniform4f(location, r, 0.2f, 0.3f, 1.0f);
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
         glDrawElements(GL_TRIANGLE_FAN, indices.size(), GL_UNSIGNED_INT, nullptr);
+
+        if (r > 1.0f)
+            increment += -0.05f;
+        else
+            increment += 0.05f;
+
+        r += increment;
+
+        Sleep(50);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
