@@ -12,8 +12,29 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
 
 const unsigned int VERTEX_COUNT = 120;
+
+static float normalise_mouse_position(double pos)
+{
+    float m_pos = (float)(pos / 500);
+    m_pos = m_pos - 0.5f < 0 ? 0 - m_pos / 2 : 0 + m_pos / 2;
+    return m_pos;
+}
+
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        double xpos, ypos;
+        //getting cursor position
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        std::cout << "Cursor Position at (" << normalise_mouse_position(xpos) << " : " << normalise_mouse_position(ypos) << ")" << std::endl;
+    }
+
+}
 
 struct ShaderProgramSource
 {
@@ -102,18 +123,18 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
     return program;
 }
 
-static std::vector<float> GetPositions(float radius, unsigned int vertex_count)
+static std::vector<float> GetPositions(float x, float y, float radius, unsigned int vertex_count)
 {
     float theta = ((360.0 / (float)vertex_count)*3.142)/180.0;
-    std::vector<float> positions = { 0.0f, 0.0f, radius, 0.0f };
+    std::vector<float> positions = { x, y, (x + radius), y };
 
     for (unsigned int i = 1; i <= vertex_count; i++)
     {
-        positions.push_back(radius * cos(theta * i));
-        positions.push_back(radius * sin(theta * i));
+        positions.push_back(x + (radius * cos(theta * i)));
+        positions.push_back(y + (radius * sin(theta * i)));
     }
-    positions.push_back(radius);
-    positions.push_back(0.0f);
+    positions.push_back((x + radius));
+    positions.push_back(y);
     return positions;
 }
 
@@ -150,6 +171,8 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
     GLenum err =  glewInit();
 
     if (err != GLEW_OK) {
@@ -157,20 +180,20 @@ int main(void)
     }
 
     std::cout << "[Debug] OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-
+    
+    float x = 0.5f, y = 0.5f, radius = 0.2f;
+    
     {
-        std::vector<float> positions = GetPositions(0.5f, VERTEX_COUNT);
+        std::vector<float> positions = GetPositions(x, y, radius, VERTEX_COUNT);
 
         std::vector<unsigned int> indices = GetIndices(VERTEX_COUNT);
 
-        unsigned int vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
+        VertexArray va;
         VertexBuffer vb(&positions[0], positions.capacity() * sizeof(float));
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+        VertexBufferLayout layout;
+        layout.Push<float>(2);
+        va.AddBuffer(vb, layout);
 
         IndexBuffer ib(&indices[0], indices.size());
 
@@ -195,9 +218,10 @@ int main(void)
             glUseProgram(shader);
             glUniform4f(location, r, 0.2f, 0.3f, 1.0f);
 
-            glBindVertexArray(vao);
+            va.Bind();
             ib.Bind();
             glDrawElements(GL_TRIANGLE_FAN, indices.size(), GL_UNSIGNED_INT, 0);
+            va.Unbind();
 
             if (r > 1.0f)
                 increment += -0.05f;
