@@ -39,6 +39,11 @@ void Shader::SetUniform1f(const std::string& name, float f1)
     glUniform1f(GetUniformLocation(name), f1);
 }
 
+void Shader::SetUniform2f(const std::string& name, float v0, float v1)
+{
+    glUniform2f(GetUniformLocation(name), v0, v1);
+}
+
 unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 {
     unsigned int id = glCreateShader(type);

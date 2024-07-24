@@ -95,7 +95,7 @@ int main(void)
 
     std::cout << "[Debug] OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     
-    float x = 0.5f, y = 0.5f, radius = 0.2f;
+    float x = 0.0f, y = 0.0f, radius = 0.2f;
     
     {
         std::vector<float> positions = GetPositions(x, y, radius, VERTEX_COUNT);
@@ -124,8 +124,8 @@ int main(void)
         float r = 0.0f;
         float increment = 0.0f;
 
-        float offset = 0.01f;
-        float offset_increment = 0.0f;
+        float theta = 0.1f;
+        float x = 0.0f, y = 0.0f;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
@@ -135,7 +135,7 @@ int main(void)
 
             shader.Bind();
             shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
-            shader.SetUniform1f("u_Offset", offset);
+            shader.SetUniform2f("u_Offset", x, y);
 
             va.Bind();
             ib.Bind();
@@ -149,12 +149,13 @@ int main(void)
 
             r += increment;
 
-            if (offset > 0.5f)
-                offset_increment += -0.005f;
+            if (theta > 6.28f)
+                theta = 0.1f;
             else
-                offset_increment += 0.005f;
+                theta += 0.1f;
 
-            offset += offset_increment;
+            x = cos(theta) * 0.75f;
+            y = sin(theta) * 0.75f;
 
             Sleep(50);
 
