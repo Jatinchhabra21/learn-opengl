@@ -19,8 +19,7 @@ const unsigned int VERTEX_COUNT = 120;
 
 static float normalise_mouse_position(double pos)
 {
-    float m_pos = (float)(pos / 500);
-    m_pos = m_pos - 0.5f < 0 ? 0 - m_pos / 2 : 0 + m_pos / 2;
+    float m_pos = (float)((pos / 500)*2 - 1);
     return m_pos;
 }
 
@@ -31,8 +30,9 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
         double xpos, ypos;
         //getting cursor position
         glfwGetCursorPos(window, &xpos, &ypos);
-
-        std::cout << "Cursor Position at (" << normalise_mouse_position(xpos) << " : " << normalise_mouse_position(ypos) << ")" << std::endl;
+        xpos = (double)((xpos / 500) * 2 - 1);
+        ypos = (double)((ypos / 500) * 2 - 1);
+        std::cout << "Cursor Position at (" << xpos << " , " << (ypos) << ")" << std::endl;
     }
 
 }
@@ -114,6 +114,7 @@ int main(void)
         Shader shader("res/Shaders/Basic.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+        shader.SetUniform1f("u_Offset", 0.2);
 
         va.Unbind();
         vb.Unbind();
@@ -123,6 +124,9 @@ int main(void)
         float r = 0.0f;
         float increment = 0.0f;
 
+        float offset = 0.01f;
+        float offset_increment = 0.0f;
+
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
@@ -131,6 +135,7 @@ int main(void)
 
             shader.Bind();
             shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+            shader.SetUniform1f("u_Offset", offset);
 
             va.Bind();
             ib.Bind();
@@ -143,6 +148,13 @@ int main(void)
                 increment += 0.05f;
 
             r += increment;
+
+            if (offset > 0.5f)
+                offset_increment += -0.005f;
+            else
+                offset_increment += 0.005f;
+
+            offset += offset_increment;
 
             Sleep(50);
 
