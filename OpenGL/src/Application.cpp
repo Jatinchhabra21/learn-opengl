@@ -17,10 +17,30 @@
 
 const unsigned int VERTEX_COUNT = 120;
 
+float x = 0.0f, y = 0.0f;
+
 static float normalise_mouse_position(double pos)
 {
     float m_pos = (float)((pos / 500)*2 - 1);
     return m_pos;
+}
+
+static void keyboard_press_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        if (key == GLFW_KEY_A)
+            x -= 0.01f;
+        else if (key == GLFW_KEY_D)
+            x += 0.01f;
+        else if (key == GLFW_KEY_W)
+            y += 0.01f;
+        else if (key == GLFW_KEY_S)
+            y -= 0.01f;
+    }
+
+    if (action == GLFW_RELEASE)
+        std::cout << key << " is released now" << std::endl;
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -86,6 +106,7 @@ int main(void)
     glfwMakeContextCurrent(window);
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetKeyCallback(window, keyboard_press_callback);
 
     GLenum err =  glewInit();
 
@@ -98,6 +119,8 @@ int main(void)
     float x = 0.0f, y = 0.0f, radius = 0.2f;
     
     {
+        extern float x, y;
+
         std::vector<float> positions = GetPositions(x, y, radius, VERTEX_COUNT);
 
         std::vector<unsigned int> indices = GetIndices(VERTEX_COUNT);
@@ -121,11 +144,11 @@ int main(void)
         ib.Unbind();
         shader.Unbind();
 
-        float r = 0.0f;
-        float increment = 0.0f;
+        float r,g,b;
+        r = g = b = 0.0f;
+        float increment = 0.05f;
 
         float theta = 0.1f;
-        float x = 0.0f, y = 0.0f;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
@@ -134,28 +157,38 @@ int main(void)
             glClear(GL_COLOR_BUFFER_BIT);
 
             shader.Bind();
-            shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+            shader.SetUniform4f("u_Color", r, g, b, 1.0f);
             shader.SetUniform2f("u_Offset", x, y);
 
             va.Bind();
             ib.Bind();
+
             glDrawElements(GL_TRIANGLE_FAN, indices.size(), GL_UNSIGNED_INT, 0);
             va.Unbind();
 
             if (r > 1.0f)
-                increment += -0.05f;
+                g += increment;
+            if (g > 1.0f)
+                b += increment;
+            if (b > 1.0f)
+            {
+                r = 0.0f;
+                b = 0.0f;
+                g = 0.0f;
+            }
             else
-                increment += 0.05f;
-
-            r += increment;
+                r += increment;
 
             if (theta > 6.28f)
                 theta = 0.1f;
             else
                 theta += 0.1f;
 
-            x = cos(theta) * 0.75f;
-            y = sin(theta) * 0.75f;
+            // std::cout << r << "," << g << "," << b<<std::endl;
+
+            /*x = cos(theta) * 0.75f;
+            y = sin(theta) * 0.75f;*/
+
 
             Sleep(50);
 
